@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Meera Voicebot</title>
+<style>
+  :root { --bg:#f7f5f1; --card:#fff; --ink:#1d1d1b; --muted:#6b6862; --line:#e3dfd7; --accent:#2f5d50; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161614; --card:#1f1f1c; --ink:#ecebe7; --muted:#a3a09a; --line:#34332f; --accent:#7fb3a3; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  label { display:block; font-size:.85rem; font-weight:600; margin:14px 0 6px; }
+  select, textarea, input { width:100%; font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:8px; padding:10px; }
+  textarea { min-height:90px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .row { grid-template-columns:1fr; } }
+  button { margin-top:18px; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:12px 18px; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  #out { white-space:pre-wrap; margin-top:20px; }
+  .muted { color:var(--muted); font-size:.85rem; }
+  .actions { display:flex; gap:10px; align-items:center; }
+  .ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Meera Voicebot</h1>
+  <p class="sub">Drafts LinkedIn posts and newsletters in the voice of Meera Pillai, Skinstinct. Built from 15 published pieces.</p>
+  <div class="card">
+    <div class="row">
+      <div><label for="format">Format</label>
+        <select id="format"><option>LinkedIn post</option><option>Newsletter</option><option>Customer reply</option><option>Product page copy</option></select></div>
+      <div><label for="category">Category</label>
+        <select id="category"><option value="">Let Meera decide</option><option>Ingredient Deep-Dive</option><option>Formulation Science</option><option>Founder Story</option><option>India-Specific Context</option><option>Industry Transparency</option><option>Consumer Education</option><option>Brand Philosophy</option></select></div>
+    </div>
+    <label for="topic">Topic / brief</label>
+    <textarea id="topic" placeholder="e.g. Why 'hypoallergenic' on a label tells you almost nothing"></textarea>
+    <label for="notes">Facts or constraints (optional)</label>
+    <textarea id="notes" placeholder="Real data Meera can cite. The bot won't invent company numbers."></textarea>
+    <div class="actions"><button id="go">Write draft</button><button id="copy" class="ghost" hidden>Copy</button><span id="status" class="muted"></span></div>
+    <div id="out"></div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+$('go').onclick = async () => {
+  const topic = $('topic').value.trim();
+  if (!topic) { $('status').textContent = 'Add a topic first.'; return; }
+  $('go').disabled = true; $('status').textContent = 'Writing...'; $('out').textContent = ''; $('copy').hidden = true;
+  try {
+    const r = await fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ format:$('format').value, category:$('category').value, topic, notes:$('notes').value }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    $('out').textContent = d.text; $('status').textContent = d.model; $('copy').hidden = false;
+  } catch (e) { $('status').textContent = 'Error: ' + e.message; }
+  $('go').disabled = false;
+};
+$('copy').onclick = () => navigator.clipboard.writeText($('out').textContent).then(() => $('status').textContent = 'Copied');
+</script>
+</body>
+</html>

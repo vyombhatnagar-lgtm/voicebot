@@ -1,0 +1,9 @@
+{
+  "name": "voicebot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ai": "^5.0.0"
+  }
+}
